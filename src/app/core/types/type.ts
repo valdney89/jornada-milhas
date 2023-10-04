@@ -1,3 +1,5 @@
+import { BuscaState } from "src/app/pages/busca/store/reducers";
+
 export interface Promocao {
     id: number
     destino: string
@@ -90,4 +92,8 @@ export interface Destaques {
     maisRapida: Passagem;
     maisBarata: Passagem;
     sugerida: Passagem;
+}
+
+export interface AppState {
+  busca: BuscaState
 }

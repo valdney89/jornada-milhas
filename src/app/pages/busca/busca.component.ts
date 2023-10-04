@@ -1,8 +1,10 @@
+import { Observable } from 'rxjs';
 import { Component, OnInit } from '@angular/core';
-import { take } from 'rxjs';
 import { FormBuscaService } from 'src/app/core/services/form-busca.service';
-import { PassagensService } from 'src/app/core/services/passagens.service';
-import { DadosBusca, Destaques, Passagem, Resultado } from 'src/app/core/types/type';
+import { DadosBusca, Destaques, Passagem } from 'src/app/core/types/type';
+import { Store } from '@ngrx/store';
+import { BuscaActions } from './store/actions';
+import { selectDestaques, selectPassagens } from './store/selectors';
 
 @Component({
   selector: 'app-busca',
@@ -10,14 +12,17 @@ import { DadosBusca, Destaques, Passagem, Resultado } from 'src/app/core/types/t
   styleUrls: ['./busca.component.scss']
 })
 export class BuscaComponent implements OnInit {
-  passagens: Passagem[] = []
-  destaques?: Destaques;
+  passagens$!: Observable<Passagem[] | undefined>;
+  destaques$!: Observable<Destaques | undefined>;
 
   constructor(
-    private passagensService: PassagensService,
-    private formBuscaService: FormBuscaService
+    private formBuscaService: FormBuscaService,
+    private store: Store
   ) { }
   ngOnInit(): void {
+    this.passagens$ = this.store.select(selectPassagens);
+    this.destaques$ = this.store.select(selectDestaques);
+
     const buscaPadrao : DadosBusca = {
       dataIda: new Date().toISOString(),
       pagina: 1,
@@ -26,28 +31,11 @@ export class BuscaComponent implements OnInit {
       passageirosAdultos: 1,
       tipo: "Executiva"
     }
-    const busca = this.formBuscaService.formEstaValido ? this.formBuscaService.obterDadosBusca() : buscaPadrao
-    this.passagensService.getPassagens(busca)
-    .pipe(take(1))
-    .subscribe(
-      res => {
-        this.passagens = res.resultado
-        this.formBuscaService.formBusca.patchValue({
-          precoMin: res.precoMin,
-          precoMax: res.precoMax,
-        })
-        this.obterDestaques()
-      }
-    )
+
+    const dadosBusca = this.formBuscaService.formEstaValido ? this.formBuscaService.obterDadosBusca() : buscaPadrao;
+    this.store.dispatch(BuscaActions.getPassagens({ dadosBusca }));
   }
   busca(ev: DadosBusca) {
-    this.passagensService.getPassagens(ev).subscribe(
-      res => {
-        console.log(res)
-        this.passagens = res.resultado
-      })
-  }
-  obterDestaques(){
-    this.destaques = this.passagensService.obterPassagensDestaques(this.passagens);
+    this.store.dispatch(BuscaActions.getPassagens({ dadosBusca: ev}))
   }
 }

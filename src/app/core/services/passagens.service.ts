@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, take } from 'rxjs';
+import { Observable, take, tap } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { DadosBusca, Destaques, Passagem, Resultado } from '../types/type';
 
@@ -15,9 +15,13 @@ export class PassagensService {
     private httpClient: HttpClient
   ) { }
   getPassagens(search: DadosBusca) : Observable<Resultado>{
+    console.log(search)
     const params = this.converterParametroParaString(search);
     const obs =  this.httpClient.get<Resultado>(this.apiUrl + '/passagem/search?' + params);
-    obs.pipe(take(1)).subscribe(res =>
+    obs.pipe(
+      tap((res) => console.log(res)),
+      take(1)
+    ).subscribe(res =>
       {
         this.precoMin = res.precoMin
         this.precoMax = res.precoMax
